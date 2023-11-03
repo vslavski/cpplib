@@ -1,0 +1,199 @@
+/* File: /cpp/lib_bit
+ *
+ * This file is a part of cpplib project which is distributed under MIT License.
+ * See file LICENSE for full license details.
+ *
+ * Copyright (c) 2020-present Nikita Zuev (V.Slavski!) <nikita.zuev@gmx.com>
+ */
+#ifndef CPPLIB__cpp__lib_bit
+#define CPPLIB__cpp__lib_bit
+
+#include <bit>
+
+/////////////////////////////////// bit_cast /////////////////////////////////////////////
+
+#ifdef __cpp_lib_bit_cast
+
+namespace cpp {
+template <class To, class From>
+requires ( false/*Consider use `std::bit_cast`*/ )
+inline constexpr To bit_cast( const From & from ) noexcept { return ::std::bit_cast<To>( from ); }
+} // namespace cpp
+
+#else
+
+#pragma message("__cpp_lib_bit_cast feature unavailable, consider use `cpp::bit_cast`")
+
+#include <cstring>
+
+#include <type_traits>
+
+namespace cpp {
+
+/** @copyright As the original source code was taken from [cppreference.com](https://cppreference.com/) site, source
+ *  code of this function is distributed under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) license.
+ *  @see https://en.cppreference.com/w/cpp/numeric/bit_cast
+ */
+
+template <class To, class From>
+// constexpr support needs compiler magic
+inline To bit_cast( const From & src ) noexcept {
+	static_assert( sizeof(To) == sizeof(From) );
+	// this implementation requires that To is trivially default constructible
+	static_assert( ::std::is_trivially_copyable_v<From> );
+	static_assert( ::std::is_trivial_v<To> );
+	To dst;
+	::std::memcpy( &dst, &src, sizeof(To) );
+	return dst;
+}
+
+} // namespace cpp
+
+#endif // __cpp_lib_bit_cast
+
+/////////////////////////////////// byteswap /////////////////////////////////////////////
+
+#ifdef __cpp_lib_byteswap
+
+#pragma message("__cpp_lib_byteswap feature support found")
+namespace cpp {
+template <class T>
+inline constexpr T byteswap( T x ) noexcept { return ::std::byteswap( x ); }
+} // namespace cpp
+
+#else
+
+#include <cstdint>
+
+namespace cpp {
+
+inline constexpr ::std::uint16_t byteswap( ::std::uint16_t v ) noexcept {
+	return ( v << 8U ) | ( v >> 8U );
+}
+
+inline constexpr ::std::uint32_t byteswap( ::std::uint32_t v ) noexcept {
+	return
+		( (::std::uint32_t)byteswap((::std::uint16_t)( v & 0xFFFFU )) << 16U )
+		|
+		( (::std::uint32_t)byteswap((::std::uint16_t)( v >> 16U )) );
+}
+
+inline constexpr uint64_t byteswap( ::std::uint64_t v ) noexcept {
+	return
+		( (::std::uint64_t)byteswap((::std::uint32_t)( v & 0xFFFFFFFFUL )) << 32U )
+		|
+		( (::std::uint64_t)byteswap((::std::uint32_t)( v >> 32U )) );
+}
+
+} // namespace cpp
+
+#endif // __cpp_lib_byteswap
+
+//////////////// has_single_bit, bit_ceil, bit_floor, bit_width //////////////////////////
+
+#ifdef __cpp_lib_int_pow2
+
+namespace cpp {
+template <class T> requires ( false/*Consider use `std::has_single_bit`*/ )
+inline constexpr bool has_single_bit( T x ) noexcept { return ::std::has_single_bit( x ); }
+template <class T> requires ( false/*Consider use `std::bit_ceil`*/ )
+inline constexpr T bit_ceil( T x ) noexcept { return ::std::bit_ceil( x ); }
+template <class T> requires ( false/*Consider use `std::bit_floor`*/ )
+inline constexpr T bit_floor( T x ) noexcept { return ::std::bit_floor( x ); }
+template <class T> requires ( false/*Consider use `std::bit_width`*/ )
+inline constexpr T bit_width( T x ) noexcept { return ::std::bit_width( x ); }
+} // namespace cpp
+
+#else
+
+#pragma message("__cpp_lib_int_pow2 feature unavailable, consider use `cpp::has_single_bit` \
+, `cpp::bit_ceil`, `cpp::bit_floor`, `cpp::bit_width`")
+
+#include <limits>
+#include <type_traits>
+
+namespace cpp {
+
+/** @copyright As the original source code was taken from [cppreference.com](https://cppreference.com/) site, source
+ *  code of this function is distributed under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) license.
+ *  @see https://en.cppreference.com/w/cpp/numeric/has_single_bit
+ */
+
+template <class T>
+inline constexpr bool has_single_bit( T x ) noexcept {
+	return ::std::popcount( x ) == 1;
+}
+
+/** @copyright As the original source code was taken from [cppreference.com](https://cppreference.com/) site, source
+ *  code of this function is distributed under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) license.
+ *  @see https://en.cppreference.com/w/cpp/numeric/bit_width
+ */
+
+template <class T>
+inline constexpr T bit_width( T x ) noexcept {
+	return ::std::numeric_limits<T>::digits - ::std::countl_zero( x );
+}
+
+/** @copyright As the original source code was taken from [cppreference.com](https://cppreference.com/) site, source
+ *  code of this function is distributed under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) license.
+ *  @see https://en.cppreference.com/w/cpp/numeric/bit_ceil
+ */
+
+template <class T>
+inline constexpr T bit_ceil( T x ) noexcept {
+	if ( x <= 1U )
+		return T{ 1 };
+	if constexpr ( ::std::is_same_v< T, decltype(+x) > )
+		return T{ 1 } << ::cpp::bit_width( T{ x - 1 } );
+	else {
+		constexpr auto offset_for_ub
+			= ::std::numeric_limits<unsigned>::digits - ::std::numeric_limits<T>::digits;
+		return T{ 1U << ( ::cpp::bit_width( T{ x - 1 } ) + offset_for_ub ) >> offset_for_ub };
+	}
+}
+
+/** @copyright As the original source code was taken from [cppreference.com](https://cppreference.com/) site, source
+ *  code of this function is distributed under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) license.
+ *  @see https://en.cppreference.com/w/cpp/numeric/bit_floor
+ */
+
+template <class T>
+inline constexpr T bit_floor( T x ) noexcept {
+	if ( x == 0 )
+		return 0;
+	return T{ 1 } << ( ::cpp::bit_width( x ) - 1 );
+}
+
+} // namespace cpp
+
+#endif // __cpp_lib_int_pow2
+
+///////////////////////// (from|to)_(little|big)_endian //////////////////////////////////
+
+namespace cpp {
+
+template< class T >
+inline constexpr T from_little_endian( T v ) noexcept {
+	return ::std::endian::native == ::std::endian::little
+		? v : byteswap( v );
+}
+
+template< class T >
+inline constexpr T to_little_endian( T v ) noexcept {
+	return from_little_endian( v );
+}
+
+template< class T >
+inline constexpr T from_big_endian( T v ) noexcept {
+	return ::std::endian::native == ::std::endian::big
+		? v : byteswap( v );
+}
+
+template< class T >
+inline constexpr T to_big_endian( T v ) noexcept {
+	return from_big_endian( v );
+}
+
+} // namespace cpp
+
+#endif // CPPLIB__cpp__lib_bit

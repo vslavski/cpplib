@@ -1,0 +1,84 @@
+/* File: /cpp/lib_type_traits
+ *
+ * This file is a part of cpplib project which is distributed under MIT License.
+ * See file LICENSE for full license details.
+ *
+ * Copyright (c) 2020-present Nikita Zuev (V.Slavski!) <nikita.zuev@gmx.com>
+ */
+#ifndef CPPLIB__cpp__lib_type_traits
+#define CPPLIB__cpp__lib_type_traits
+
+#include <type_traits>
+
+namespace cpp {
+
+// ::cpp::conjunction/disjunction<bool...>
+
+namespace detail {
+template<bool T, bool...U> constexpr bool conjunction() noexcept {
+	if constexpr ( sizeof...(U) == 0 ) return T;
+	else return T and conjunction<U...>();
+}
+template<bool T, bool...U> constexpr bool disjunction() noexcept {
+	if constexpr ( sizeof...(U) == 0 ) return T;
+	else return T or disjunction<U...>();
+}
+} // namespace detail
+
+template<bool...Args>
+using conjunction = ::std::bool_constant< detail::conjunction<Args...>() >;
+template<bool...Args>
+constexpr bool conjunction_v = conjunction<Args...>::value;
+
+template<bool...Args>
+using disjunction = ::std::bool_constant< detail::disjunction<Args...>() >;
+template<bool...Args>
+constexpr bool disjunction_v = disjunction<Args...>::value;
+
+// ::cpp::has_same_cv<T, U>
+
+template< class T, class U >
+using has_same_cv = ::std::bool_constant
+	< ::std::is_const_v<T> == ::std::is_const_v<U>
+	and ::std::is_volatile_v<T> == ::std::is_volatile_v<U> >;
+template< class T, class U >
+constexpr bool has_same_cv_v = has_same_cv<T, U>::value;
+
+/** @error "constexpr declval" required here.
+Add #include <utility> for ::std::declval<>().
+
+// ::cpp::remove_cvrefptr<T>
+/// @todo Use ::std::decay<>?
+
+template< class T >
+using remove_cvrefptr = ::std::conditional
+	< ::std::is_pointer_v<T>
+	, ::std::remove_cv< ::std::remove_pointer<T> >
+	, ::std::remove_cvref<T>
+	>;
+template< class T >
+using remove_cvrefptr_t = typename remove_cvrefptr<T>::type;
+
+// ::cpp::is_pointer_interconvertible_base_of<Base, Derived>
+
+namespace detail {
+template< class Base, class Derived >
+constexpr bool is_pointer_interconvertible_base_of( Derived & d ) noexcept
+	{ return reinterpret_cast<Derived*>( static_cast<Base*>( &d ) ) == &d; }
+template< class Base, class Derived >
+constexpr bool is_pointer_interconvertible_base_of_v
+	= is_pointer_interconvertible_base_of< remove_cvrefptr_t<Base> >
+	( ::std::declval< ::std::add_lvalue_reference_t< remove_cvrefptr_t<Derived> > >() );
+} // namespace detail
+
+template< class Base, class Derived >
+using is_pointer_interconvertible_base_of = ::std::bool_constant
+	< detail::is_pointer_interconvertible_base_of_v<Base, Derived> >;
+template< class Base, class Derived >
+constexpr bool is_pointer_interconvertible_base_of_v
+	= is_pointer_interconvertible_base_of<Base, Derived>::value;
+*/
+
+} // namespace cpp
+
+#endif // CPPLIB__cpp__lib_type_traits

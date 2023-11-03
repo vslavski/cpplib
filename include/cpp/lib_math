@@ -1,0 +1,33 @@
+/* File: /cpp/lib_math
+ *
+ * This file is a part of cpplib project which is distributed under MIT License.
+ * See file LICENSE for full license details.
+ *
+ * Copyright (c) 2020-present Nikita Zuev (V.Slavski!) <nikita.zuev@gmx.com>
+ */
+#ifndef CPPLIB__cpp__lib_math
+#define CPPLIB__cpp__lib_math
+
+#include <cmath>
+
+#include <limits>
+
+#include "lib_concepts"
+
+namespace cpp {
+
+/** @copyright As the original source code was taken from [cppreference.com](https://cppreference.com/) site, source
+ *  code of this function is distributed under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) license.
+ *  @see https://en.cppreference.com/w/cpp/types/numeric_limits/epsilon
+ */
+
+template< FloatingPoint T >
+inline constexpr bool epsilon_eq( T a, T b, int ulp = 1 ) noexcept {
+	const auto diff = ::std::abs( a - b );
+	const auto epsilon = ::std::numeric_limits<T>::epsilon() * ::std::abs( a + b ) * (T) ulp;
+	return diff <= epsilon || diff < ::std::numeric_limits<T>::min();
+}
+
+} // namespace cpp
+
+#endif // CPPLIB__cpp__lib_math

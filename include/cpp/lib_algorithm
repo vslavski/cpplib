@@ -1,0 +1,74 @@
+/* File: /cpp/lib_algorithm
+ *
+ * This file is a part of cpplib project which is distributed under MIT License.
+ * See file LICENSE for full license details.
+ *
+ * Copyright (c) 2020-present Nikita Zuev (V.Slavski!) <nikita.zuev@gmx.com>
+ */
+#ifndef CPPLIB__cpp__lib_algorithm
+#define CPPLIB__cpp__lib_algorithm
+
+#include <algorithm>
+
+namespace cpp {
+
+template< class T, class U >
+inline constexpr auto find( T & t, U && u ) noexcept {
+	return ::std::find( t.begin(), t.end(), ::std::forward<U>( u ) );
+}
+
+template< class T, class U >
+inline constexpr auto find( const T & t, U && u ) noexcept {
+	return ::std::find( t.begin(), t.end(), ::std::forward<U>( u ) );
+}
+
+template< class T, class U >
+inline constexpr bool contains( const T & t, U && u ) noexcept {
+	return find( t, u ) != t.end();
+}
+
+template< class PtrT >
+struct ptr_less {
+	constexpr bool operator ()( const PtrT & lhv, const PtrT & rhv ) const noexcept {
+		if ( not lhv )
+			return (bool) rhv;
+		if ( not rhv )
+			return false;
+		return *lhv < *rhv;
+	}
+};
+
+inline constexpr bool ptr_less_fn( const auto & lhv, const auto & rhv ) noexcept {
+	return ptr_less<decltype(lhv)>{}( lhv, rhv );
+}
+
+template< class PtrT >
+struct wptr_less {
+	constexpr bool operator ()( const PtrT & lhv, const PtrT & rhv ) const noexcept {
+		return ptr_less_fn( lhv.lock(), rhv.lock() );
+	}
+};
+
+inline constexpr bool wptr_less_fn( const auto & lhv, const auto & rhv ) noexcept {
+	return wptr_less<decltype(lhv)>{}( lhv, rhv );
+}
+
+template< class RefT >
+struct ref_less {
+	constexpr bool operator ()( const RefT & lhv, const RefT & rhv ) const noexcept {
+		return lhv.get() < rhv.get();
+	}
+};
+
+inline constexpr bool ref_less_fn( const auto & lhv, const auto & rhv ) noexcept {
+	return ref_less<decltype(lhv)>{}( lhv, rhv );
+}
+
+template< class T >
+inline constexpr bool is_in_range( const T & value, const T & min, const T & max ) noexcept {
+	return min <= value and value <= max;
+}
+
+} // namespace cpp
+
+#endif // CPPLIB__cpp__lib_algorithm

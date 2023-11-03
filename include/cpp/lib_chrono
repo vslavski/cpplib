@@ -1,0 +1,74 @@
+/* File: /cpp/lib_chrono
+ *
+ * This file is a part of cpplib project which is distributed under MIT License.
+ * See file LICENSE for full license details.
+ *
+ * Copyright (c) 2020-present Nikita Zuev (V.Slavski!) <nikita.zuev@gmx.com>
+ */
+#ifndef CPPLIB__cpp__lib_chrono
+#define CPPLIB__cpp__lib_chrono
+
+#include <chrono>
+
+namespace cpp::chrono {
+
+// ::cpp::chrono::timediff_t<Clock, Duration>
+
+template< class Clock, class Duration = typename Clock::duration >
+class timediff_t final {
+public:
+	using clock = Clock;
+	using duration = Duration;
+
+	constexpr duration get() {
+		const auto now = clock::now();
+		const auto last = timestamp;
+		timestamp = now;
+		if ( last == decltype(last){} )
+			return {};
+		return ::std::chrono::duration_cast<duration>( now - last );
+	}
+	constexpr timediff_t & reset() {
+		timestamp = {};
+		return *this;
+	}
+private:
+	typename clock::time_point timestamp = {};
+};
+
+// ::cpp::chrono::counter<T, Clock, Duration>
+
+template< typename T, class Clock, class Duration = typename Clock::duration >
+class counter final {
+public:
+	using clock = Clock;
+	using duration = Duration;
+	using timediff = timediff_t< Clock, Duration >;
+	using value_type = T;
+
+	constexpr value_type count() const
+		{ return count_; }
+	constexpr duration average() const {
+		return count_ == value_type{}
+		? duration{}
+		: accum / (typename duration::rep)count_;
+	}
+	constexpr value_type next() {
+		accum += diff.get();
+		return ++count_;
+	}
+	constexpr counter & reset() {
+		diff.reset();
+		accum = {};
+		count_ = 0;
+		return *this;
+	}
+private:
+	timediff diff;
+	duration accum = {};
+	value_type count_ = 0;
+};
+
+} // namespace cpp::chrono
+
+#endif // CPPLIB__cpp__lib_chrono

@@ -1,0 +1,67 @@
+/* File: /cpp/lib_concepts
+ *
+ * This file is a part of cpplib project which is distributed under MIT License.
+ * See file LICENSE for full license details.
+ *
+ * Copyright (c) 2020-present Nikita Zuev (V.Slavski!) <nikita.zuev@gmx.com>
+ */
+#ifndef CPPLIB__cpp__lib_concepts
+#define CPPLIB__cpp__lib_concepts
+
+#include <cstddef>
+
+#include <type_traits>
+
+namespace cpp {
+
+template< class T >
+concept ContiguousContainer = requires( T & t ) {
+	/*assert*/t.data() + t.size() == &*t.end();
+	/*assert*/t.end() - t.begin() == (::std::ptrdiff_t)t.size();
+};
+
+template< class T >
+concept Integral = ::std::is_integral_v<T>;
+
+template< class T >
+concept IntegralSigned = Integral<T> and ::std::is_signed_v<T>;
+
+template< class T >
+concept IntegralUnsigned = Integral<T> and ::std::is_unsigned_v<T>;
+
+template< class T >
+concept FloatingPoint = ::std::is_floating_point_v<T>;
+
+template< class T >
+concept Numeric = Integral<T> or FloatingPoint<T>;
+
+template< class T >
+concept Enumeration = ::std::is_enum_v<T>;
+
+template< class T >
+concept IntOrEnum = Integral<T> or Enumeration<T>;
+
+template< class T >
+concept Trivial = ::std::is_trivial_v<T>;
+
+template< class T >
+concept Void = ::std::is_void_v<T>;
+
+template< class T >
+concept Pointer = ::std::is_pointer_v<T>;
+
+template< class T >
+concept Invocable = ::std::is_invocable_v<T>;
+
+template< class T, class U >
+concept SameAs = ::std::is_same_v<T, U>;
+
+template< class T >
+concept Function = ::std::is_function_v< ::std::remove_cvref_t<T> >;
+
+template< class T >
+concept MemberFunction = ::std::is_member_function_pointer_v< ::std::remove_cvref_t<T> >;
+
+} // namespace cpp
+
+#endif // CPPLIB__cpp__lib_concepts

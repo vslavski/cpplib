@@ -1,0 +1,26 @@
+/* File: /cpp/lib_debug
+ *
+ * This file is a part of cpplib project which is distributed under MIT License.
+ * See file LICENSE for full license details.
+ *
+ * Copyright (c) 2020-present Nikita Zuev (V.Slavski!) <nikita.zuev@gmx.com>
+ */
+#ifndef CPPLIB__cpp__lib_debug
+#define CPPLIB__cpp__lib_debug
+
+#include <cassert>
+
+#include <type_traits>
+
+#define CPP_UNUSED( expression )	(void) (expression)
+#define CPP_UNUSED_NAMES( ... )		(void) __VA_ARGS__
+
+#define CPP_NOP						CPP_UNUSED( 0 )
+
+#define CPP_ASSERT( condition ) 					\
+	if ( not ::std::is_constant_evaluated() )		\
+	{ assert( condition ); }						\
+	else											\
+	CPP_UNUSED( condition )
+
+#endif // CPPLIB__cpp__lib_debug

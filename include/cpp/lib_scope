@@ -1,0 +1,52 @@
+/* File: /cpp/lib_scope
+ *
+ * This file is a part of cpplib project which is distributed under MIT License.
+ * See file LICENSE for full license details.
+ *
+ * Copyright (c) 2020-present Nikita Zuev (V.Slavski!) <nikita.zuev@gmx.com>
+ */
+#ifndef CPPLIB__cpp__lib_scope
+#define CPPLIB__cpp__lib_scope
+
+#include <utility>
+
+/////////////////////////////////// scope_exit /////////////////////////////////////////////
+
+namespace cpp {
+
+/// @see https://en.cppreference.com/w/cpp/experimental/scope_exit
+
+/// @todo Satisfy all the requirements.
+
+template< class EF >
+class scope_exit {
+public:
+	scope_exit( const scope_exit & ) = delete;
+	scope_exit & operator = ( const scope_exit & ) = delete;
+	scope_exit & operator = ( scope_exit && ) = delete;
+
+	constexpr explicit scope_exit( EF && fn_ ) noexcept
+		: fn{ ::std::move( fn_ ) }
+		, active{ true }
+		{}
+
+	constexpr scope_exit( scope_exit && other ) noexcept
+		: fn{ ::std::move( other.fn ) }
+		, active{ ::std::move( other.active ) }
+		{}
+
+	constexpr ~scope_exit() noexcept {
+		if ( active ) fn();
+	}
+
+	constexpr void release() noexcept {
+		active = false;
+	}
+private:
+	EF fn;
+	bool active;
+};
+
+} // namespace cpp
+
+#endif // CPPLIB__cpp__lib_scope

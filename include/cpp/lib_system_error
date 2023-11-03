@@ -1,0 +1,112 @@
+/* File: /cpp/lib_system_error
+ *
+ * This file is a part of cpplib project which is distributed under MIT License.
+ * See file LICENSE for full license details.
+ *
+ * Copyright (c) 2020-present Nikita Zuev (V.Slavski!) <nikita.zuev@gmx.com>
+ */
+#ifndef CPPLIB__cpp__lib_system_error
+#define CPPLIB__cpp__lib_system_error
+
+#include <compare>
+#include <system_error>
+#include <string>
+
+#include "./lib_concepts"
+
+namespace cpp {
+
+// DECLARATION cpp::error_condition
+
+/// @brief `error_condition` class with `constexpr` constructors
+/// @see https://en.cppreference.com/w/cpp/error/error_condition
+
+class error_condition {
+public:
+	// CONSTRUCTORS AND ASSIGNMENT
+
+	constexpr error_condition() noexcept = default;
+	constexpr error_condition( const error_condition & ) noexcept = default;
+	constexpr error_condition( error_condition && ) noexcept = default;
+
+	constexpr error_condition( int code, const ::std::error_category & error_category ) noexcept
+		: value_ {code}, category_ {&error_category} {}
+
+	template< Enumeration ErrorConditionEnum >
+	requires ( ::std::is_error_condition_enum_v<ErrorConditionEnum> )
+	error_condition( ErrorConditionEnum code ) noexcept
+		: error_condition {(int) code, ::std::generic_category()} {}
+
+	constexpr error_condition & operator = ( const error_condition & ) noexcept = default;
+	constexpr error_condition & operator = ( error_condition && ) noexcept = default;
+
+	template< Enumeration ErrorConditionEnum >
+	requires ( ::std::is_error_condition_enum_v<ErrorConditionEnum> )
+	error_condition & operator = ( ErrorConditionEnum code ) noexcept
+		{ value_ = (int) code; category_ = &::std::generic_category(); return *this; }
+
+	// ::std::error_condition SUPPORT
+
+	error_condition( const ::std::error_condition & other ) noexcept
+		: error_condition {other.value(), other.category()} {}
+	error_condition( ::std::error_condition && other ) noexcept
+		: error_condition {static_cast<const ::std::error_condition&>( other )} {}
+
+	error_condition & operator = ( const ::std::error_condition & other ) noexcept
+		{ value_ = other.value(); category_ = &other.category(); return *this; }
+	error_condition & operator = ( ::std::error_condition && other ) noexcept
+		{ return operator = ( static_cast<const ::std::error_condition&>( other ) ); }
+
+	operator ::std::error_condition () const noexcept { return {value_, ensure_category()}; }
+
+	// COMMON
+
+	constexpr explicit operator bool () const { return value_ != 0; }
+
+	constexpr void assign( int code, const ::std::error_category & error_category ) noexcept
+		{ value_ = code; category_ = &error_category; }
+
+	constexpr void clear() noexcept { value_ = 0; category_ = nullptr; }
+
+	constexpr int value() const noexcept { return value_; }
+
+	const ::std::error_category & category() const noexcept { return ensure_category(); }
+
+	::std::string message() const noexcept { return ensure_category().message( value_ ); }
+private:
+	const ::std::error_category & ensure_category() const noexcept {
+		if ( category_ == nullptr )
+			category_ = &::std::generic_category();
+		return *category_;
+	}
+
+	int value_ = 0;
+	mutable const ::std::error_category * category_ = nullptr;
+};
+
+// DECLARATION cpp::ErrorCondition
+
+template< class T >
+concept ErrorCondition = SameAs<T, error_condition>
+					or SameAs<T, ::std::error_condition>
+					or SameAs<T, ::std::error_code>;
+
+// DECLARATION operator ==, operator <=>
+
+template< ErrorCondition Lhv, ErrorCondition Rhv >
+requires ( SameAs<Lhv, error_condition> or SameAs<Rhv, error_condition> )
+inline bool operator == ( const Lhv & lhv, const Rhv & rhv ) noexcept
+{ return lhv.value() == rhv.value() and lhv.category() == rhv.category(); }
+
+template< ErrorCondition Lhv, ErrorCondition Rhv >
+requires ( SameAs<Lhv, error_condition> or SameAs<Rhv, error_condition> )
+inline ::std::strong_ordering operator <=> ( const Lhv & lhv, const Rhv & rhv ) noexcept {
+	const auto & category_result = lhv.category() <=> rhv.category();
+	if ( category_result != ::std::strong_ordering::equal )
+		return category_result;
+	return lhv.value() <=> rhv.value();
+}
+
+} // namespace cpp
+
+#endif // CPPLIB__cpp__lib_system_error
